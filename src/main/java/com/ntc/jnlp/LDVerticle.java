@@ -22,6 +22,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
+import opennlp.tools.langdetect.Language;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +63,7 @@ public class LDVerticle extends AbstractVerticle {
             switch (action) {
                 // PublicService
                 case "ld":
-                    ldService.langDetect(message);
+                    langDetect(message);
                     break;
                 
                 default:
@@ -70,6 +71,25 @@ public class LDVerticle extends AbstractVerticle {
             }
         } catch (Exception e) {
             log.error("onMessage " + e.getMessage());
+        }
+    }
+    
+    public void langDetect(Message<JsonObject> message) {
+        try {
+            JsonObject params = message.body();
+            String s = params.getString("s", "");
+            // Get the most probable language
+            Language bestLanguage = ldService.langDetect(s);
+            System.out.println("bestLanguage: " + bestLanguage.toString());
+            
+            // 1. Render data
+            JsonObject lc = new JsonObject();
+            lc.put("langCode", bestLanguage.getLang());
+            JsonObject resp = new JsonObject();
+            resp.put("data", lc);
+            message.reply(resp);
+        } catch (Exception e) {
+            log.error("langDetect: " + e.getMessage(), e);
         }
     }
     

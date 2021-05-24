@@ -16,6 +16,7 @@
 
 package com.ntc.jvertx;
 
+import com.ntc.jnlp.LDVerticle;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Promise;
