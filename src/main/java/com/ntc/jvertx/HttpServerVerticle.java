@@ -60,10 +60,15 @@ public class HttpServerVerticle extends AbstractVerticle {
         //router.get("/*").handler(StaticHandler.create("./vue/dist/"));
         //router.get("/").handler(context -> context.reroute("index.html"));
 
-        Router apiRouter = Router.router(vertx);
+        Router ldRouter = Router.router(vertx);
         // Public Zone.
-        apiRouter.post("/post").handler(this::ldHandler);
-        router.mountSubRouter("/ld/v1", apiRouter);
+        ldRouter.post("/post").handler(this::ldHandler);
+        router.mountSubRouter("/ld/v1", ldRouter);
+        
+        Router sdRouter = Router.router(vertx);
+        // Public Zone.
+        sdRouter.post("/post").handler(this::sdHandler);
+        router.mountSubRouter("/sd/v1", sdRouter);
 
         int portNumber = NConfig.getConfig().getInt("webserver.port", 8787);
         server.requestHandler(router)
@@ -144,4 +149,41 @@ public class HttpServerVerticle extends AbstractVerticle {
         }
     }
     
+    public void sdHandler(RoutingContext context) {
+        try {
+            //System.out.println("In sdHandler");
+            JsonObject resp = new JsonObject();
+            resp.put("err", -1);
+            resp.put("msg", "Execute fail. Please try again.");
+            JsonObject params = getParams(context);
+            // 1. Validate params.
+            String s = params.getString("s", "");
+            if (s.isEmpty()) {
+                resp.put("err", -1);
+                resp.put("msg", "Params invalid");
+                printJson(context, resp);
+                return;
+            }
+
+            // Z. Sentence detector
+            DeliveryOptions options = new DeliveryOptions().addHeader("action", "visd");
+            vertx.eventBus().request(CommonVX.SD_QUEUE, params, options, reply -> {
+                if (reply.succeeded()) {
+                    JsonObject body = (JsonObject) reply.result().body();
+                    JsonObject data = body.getJsonObject("data");
+                    //System.out.println("home: " + home.toString());
+                    resp.put("err", 0);
+                    resp.put("msg", "Sentence detector successful");
+                    resp.put("data", data);
+                    printJson(context, resp);
+                } else {
+                    resp.put("err", -1);
+                    resp.put("msg", reply.cause().getMessage());
+                    printJson(context, resp);
+                }
+            });
+        } catch (Exception e) {
+            log.error("sdHandler " + e.getMessage(), e);
+        }
+    }
 }

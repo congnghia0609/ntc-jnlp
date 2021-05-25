@@ -17,6 +17,7 @@
 package com.ntc.jvertx;
 
 import com.ntc.jnlp.LDVerticle;
+import com.ntc.jnlp.SDVerticle;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Promise;
@@ -29,22 +30,32 @@ import io.vertx.core.Promise;
 public class MainVerticle extends AbstractVerticle {
     @Override
     public void start(Promise<Void> promise) throws Exception {
+        
         // 1. Language Detector Vert
         Promise<String> ldPromise = Promise.promise();
         vertx.deployVerticle(
-                LDVerticle.class,
+                LDVerticle.class, 
                 new DeploymentOptions().setInstances(2).setWorkerPoolSize(100), 
                 ldPromise);
-        ldPromise.future().compose(id -> { // id: 9d61936e-8e08-46ca-950e-2d85d4580acb
-
-            // 2. Http Vert
-            Promise<String> httpPromise = Promise.promise();
+        ldPromise.future().compose(idld -> { // id: 9d61936e-8e08-46ca-950e-2d85d4580acb
+            
+            // 2. SDVerticle Vert
+            Promise<String> sdPromise = Promise.promise();
             vertx.deployVerticle(
-                    HttpServerVerticle.class,
+                    SDVerticle.class,
                     new DeploymentOptions().setInstances(2).setWorkerPoolSize(100),
-                    httpPromise);
+                    sdPromise);
+            return sdPromise.future().compose(idsd -> {
+                
+                // 3. Http Vert
+                Promise<String> httpPromise = Promise.promise();
+                vertx.deployVerticle(
+                        HttpServerVerticle.class,
+                        new DeploymentOptions().setInstances(2).setWorkerPoolSize(100),
+                        httpPromise);
 
-            return httpPromise.future();
+                return httpPromise.future();
+            });
         }).onComplete(ar -> {
             if (ar.succeeded()) {
                 promise.complete();

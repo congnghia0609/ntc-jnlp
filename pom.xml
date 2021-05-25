@@ -44,6 +44,11 @@
             <artifactId>ntc-langdetect</artifactId>
             <version>1.0.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.streetcodevn</groupId>
+            <artifactId>ntc-visd</artifactId>
+            <version>1.0.0</version>
+        </dependency>
         
         <dependency>
             <groupId>io.vertx</groupId>
