@@ -109,5 +109,19 @@ curl -X POST -i 'http://localhost:8787/sd/v1/post' \
 ```
 
 
+## 3. Call API Vietnamese Tokenizer NLP
+```bash
+# Request
+curl -X POST -i 'http://localhost:8787/vt/v1/post' \
+  -H "Content-Type: application/json" \
+  --data '{
+    "s": "VNTok là công cụ tách từ Tiếng Việt."
+  }'
+
+# Response
+{"err":0,"msg":"Tokenizer successful","data":{"vt":"VNTok là công_cụ tách từ Tiếng_Việt ."}}
+```
+
+
 ## License
 This code is under the [Apache License v2](https://www.apache.org/licenses/LICENSE-2.0).  

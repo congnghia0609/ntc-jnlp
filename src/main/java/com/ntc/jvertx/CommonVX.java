@@ -24,6 +24,7 @@ package com.ntc.jvertx;
 public class CommonVX {
     public static final String LD_QUEUE = "ldqueue";
     public static final String SD_QUEUE = "sdqueue";
+    public static final String VT_QUEUE = "vtqueue";
     
     // Error code
     public static final int SUCCESS = 0;

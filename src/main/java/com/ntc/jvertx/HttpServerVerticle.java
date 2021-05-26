@@ -60,15 +60,23 @@ public class HttpServerVerticle extends AbstractVerticle {
         //router.get("/*").handler(StaticHandler.create("./vue/dist/"));
         //router.get("/").handler(context -> context.reroute("index.html"));
 
+        //// Language Detect API
         Router ldRouter = Router.router(vertx);
         // Public Zone.
         ldRouter.post("/post").handler(this::ldHandler);
         router.mountSubRouter("/ld/v1", ldRouter);
         
+        //// Sentence Detect API
         Router sdRouter = Router.router(vertx);
         // Public Zone.
         sdRouter.post("/post").handler(this::sdHandler);
         router.mountSubRouter("/sd/v1", sdRouter);
+        
+        //// Vietnamese Tokenizer API
+        Router vtRouter = Router.router(vertx);
+        // Public Zone.
+        vtRouter.post("/post").handler(this::vtHandler);
+        router.mountSubRouter("/vt/v1", vtRouter);
 
         int portNumber = NConfig.getConfig().getInt("webserver.port", 8787);
         server.requestHandler(router)
@@ -184,6 +192,44 @@ public class HttpServerVerticle extends AbstractVerticle {
             });
         } catch (Exception e) {
             log.error("sdHandler " + e.getMessage(), e);
+        }
+    }
+    
+    public void vtHandler(RoutingContext context) {
+        try {
+            //System.out.println("In vtHandler");
+            JsonObject resp = new JsonObject();
+            resp.put("err", -1);
+            resp.put("msg", "Execute fail. Please try again.");
+            JsonObject params = getParams(context);
+            // 1. Validate params.
+            String s = params.getString("s", "");
+            if (s.isEmpty()) {
+                resp.put("err", -1);
+                resp.put("msg", "Params invalid");
+                printJson(context, resp);
+                return;
+            }
+
+            // Z. Sentence detector
+            DeliveryOptions options = new DeliveryOptions().addHeader("action", "vntok");
+            vertx.eventBus().request(CommonVX.VT_QUEUE, params, options, reply -> {
+                if (reply.succeeded()) {
+                    JsonObject body = (JsonObject) reply.result().body();
+                    JsonObject data = body.getJsonObject("data");
+                    //System.out.println("home: " + home.toString());
+                    resp.put("err", 0);
+                    resp.put("msg", "Tokenizer successful");
+                    resp.put("data", data);
+                    printJson(context, resp);
+                } else {
+                    resp.put("err", -1);
+                    resp.put("msg", reply.cause().getMessage());
+                    printJson(context, resp);
+                }
+            });
+        } catch (Exception e) {
+            log.error("vtHandler " + e.getMessage(), e);
         }
     }
 }

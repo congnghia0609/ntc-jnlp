@@ -18,6 +18,7 @@ package com.ntc.jvertx;
 
 import com.ntc.jnlp.LDVerticle;
 import com.ntc.jnlp.SDVerticle;
+import com.ntc.jnlp.VTVerticle;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Promise;
@@ -47,14 +48,23 @@ public class MainVerticle extends AbstractVerticle {
                     sdPromise);
             return sdPromise.future().compose(idsd -> {
                 
-                // 3. Http Vert
-                Promise<String> httpPromise = Promise.promise();
+                // 3. VTVerticle Vert
+                Promise<String> vtPromise = Promise.promise();
                 vertx.deployVerticle(
-                        HttpServerVerticle.class,
+                        VTVerticle.class,
                         new DeploymentOptions().setInstances(2).setWorkerPoolSize(100),
-                        httpPromise);
+                        vtPromise);
+                return vtPromise.future().compose(idvt -> {
+                    
+                    // 4. Http Vert
+                    Promise<String> httpPromise = Promise.promise();
+                    vertx.deployVerticle(
+                            HttpServerVerticle.class,
+                            new DeploymentOptions().setInstances(2).setWorkerPoolSize(100),
+                            httpPromise);
 
-                return httpPromise.future();
+                    return httpPromise.future();
+                });
             });
         }).onComplete(ar -> {
             if (ar.succeeded()) {
